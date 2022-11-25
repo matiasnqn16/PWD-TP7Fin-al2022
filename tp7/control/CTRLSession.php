@@ -75,47 +75,32 @@ class CTRLSession{
 	}
 
     public function puedoentrar($desdedonde) {
-
-        // primero levantamos el rol
-        //$objsession=new CTRLSession();
-        //despues el nombre de archivo con el directorio
-        $archivo=$desdedonde;
-        $archivo=str_replace("\\","-",$archivo);
-        // como estamos en el control podemos llamar al modelo
+ 
+        // esta convesrsion era la que no queria hacer, habia que usar los codigos ascii nomas
+        $desdedonde=str_replace(chr(92),chr(47),$desdedonde);
+        $resta=substr($desdedonde,0,strrpos($desdedonde,chr(47)));
+        $pos=strrpos($resta,chr(47));
+        $tofind="..".substr($desdedonde,$pos);
+        // formatee __FILE al formato de meurl => ../vista/carrito/index.php etc
+        
         $objmenu=new Menu();
-        $lista=$objmenu->listar(); // levando todo el menu y macheo inverso
-        $idmenu=0;
-        $sinrol=null;
-        foreach($lista as $objunmenu) {
-           $meurl=$objunmenu->getmeurl();
-           // reemplaza en los dos lugares todas las barras con -
-           $meurl=substr($meurl,3); 
-           $meurl=str_replace("/","-",$meurl);
-           if ($meurl != null) {
-            //       echo "not null".$meurl."<br>";
-               if (strpos($archivo,$meurl) > 0 ) {
-                  //           echo "encuentra".$meurl."<br>";
-                   $idmenu=$objunmenu->getidmenu();
-                   $sinrol=$objunmenu->getsinrolrequerido();  
-               }
-            }
-        //echo $meurl." - ".$archivo." - ".strpos($archivo,$meurl)."<br>";
-        }
-        // verifica solo si tiene rol
         $ok=false;
-  //      echo "a ver q tengo,".$archivo." x ahora en false:".$idmenu." sin rol ".$sinrol. "rol activo".$this->getRol()."<br>";
-        if ($sinrol != null) {
-//            echo "valido sin rol";
-            $ok=true;
-        } else {
-            // ya tenemos la id del menu ahora vamos a ver si dentro de los roles que tiene esta el activo o es rolless
-            $objmenurol=new Menurol();
-            if ($this->getRol() != null  && $objmenurol->listar("idmenu='".$idmenu."' and idrol='".$this->getRol()."'") != NULL ) { 
-//                echo "valido con rol";
-                $ok=true;
-            }
+        $lista=$objmenu->listar("meurl='".$tofind."'");
+
+        if ($lista) {
+            $sinrolrequerido=$lista[0]->getsinrolrequerido();
+            $idmenu=$lista[0]->getidmenu();
+
+            if ($sinrolrequerido != null) {
+               $ok=true;
+            } else {
+                // ya tenemos la id del menu ahora vamos a ver si dentro de los roles que tiene esta el activo o es rolless
+                $objmenurol=new Menurol();
+                if ($this->getRol() != null  && $objmenurol->listar("idmenu='".$idmenu."' and idrol='".$this->getRol()."'") != NULL ) { 
+                    $ok=true;
+                }
+            }    
         }
-        // despues return x ahora echo
          return $ok;
     }         
 }
